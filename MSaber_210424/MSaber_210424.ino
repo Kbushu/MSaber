@@ -15,14 +15,15 @@
 #include <Wire.h>
 #include <MPU6050.h>
 #include <TMRpcm.h>         // audio from SD library
-TMRpcm tmrpcm;
+TMRpcm audio;
 #define IMU_GND A1
 
 MPU6050 accelgyro;
 
-const int ledR_Pin = 6;// the number of the LED pin
-const int ledG_Pin = 9;// the number of the LED pin
-const int ledB_Pin = 8;// the number of the LED pin
+//don't use pin 9, it's dedicated for sound
+const int ledR_Pin = 3;// the number of the LED pin6
+const int ledG_Pin = 5;// the number of the LED pin9
+const int ledB_Pin = 6;// the number of the LED pin8
 
 // ------------------------------ VARIABLES ---------------------------------
 int16_t ax, ay, az;
@@ -122,9 +123,9 @@ void setup() {
   //  }
 
   // SD initialization
-  tmrpcm.speakerPin = 9;
-  tmrpcm.setVolume(4);
-  tmrpcm.quality(1);
+  audio.speakerPin = 9;
+  audio.setVolume(4);
+  audio.quality(1);
   if (DEBUG) {
     if (SD.begin(8)) Serial.println(F("SD OK"));
     else Serial.println(F("SD fail"));
@@ -138,33 +139,37 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   getFreq();
-  getEffect1();
+  getEffect();
   //  getEffect();
   //  end of loop
 }
 
 //this is working ok
-void getEffect1() {
+void getEffect() {
   if ((GYR >= SWING_L_THR) && (millis() - swing_timeout > 100)) {
-    tmrpcm.loop(0);
+    swing_flag = 1;
+    audio.loop(0);
     nowNumber = random(5);
     if (GYR > SWING_THR) {
       Serial.println(F("Long swing!"));
+      get_light_effect();
       strcpy_P(BUFFER, (char*)pgm_read_word(&(swings_L[nowNumber])));
-      tmrpcm.play(BUFFER);
-      while (tmrpcm.isPlaying() == 1){
-              delay(100);
-      }
+      audio.play(BUFFER);
+      //while (audio.isPlaying() == 1){
+              //delay(100);
+      //}
+      //swing_flag = 0;
     } else {
       Serial.println(F("Swing!"));
       strcpy_P(BUFFER, (char*)pgm_read_word(&(swings[nowNumber])));
-      tmrpcm.play(BUFFER);
+      audio.play(BUFFER);
 //      TODO if the while works put it here also
-      delay(400);
+      //delay(400);
     }
   } else {
-    tmrpcm.play("HUM.WAV");
-    tmrpcm.loop(1);
+    swing_flag = 0;
+    audio.play("HUM.WAV");
+    audio.loop(1);
   }
 }
 
@@ -207,43 +212,10 @@ void getFreq() {
   }
 }
 
-//effect
-void getEffect() {
-  if ((ACC < STRIKE_THR) && GYR > 80 && (millis() - swing_timeout > 100)) {
-    swing_timeout = millis();
-    if (GYR >= SWING_THR) {
-      Serial.println(F("Swing!"));
-      nowNumber = random(5);
-      strcpy_P(BUFFER, (char*)pgm_read_word(&(swings[nowNumber])));
-      tmrpcm.play(BUFFER);
-    } else if ((GYR > SWING_L_THR) && (GYR < SWING_THR)) {
-      Serial.println(F("Long swing!"));
-      nowNumber = random(5);
-      strcpy_P(BUFFER, (char*)pgm_read_word(&(swings_L[nowNumber])));
-      tmrpcm.play(BUFFER);
-    }
-  } else if ((ACC > STRIKE_THR) && (ACC < STRIKE_S_THR)) {
-    nowNumber = random(8);
-    //    hard strike
-    if (ACC >= STRIKE_S_THR) {
-      strcpy_P(BUFFER, (char*)pgm_read_word(&(strikes[nowNumber])));
-      tmrpcm.play(BUFFER);
-      Serial.println(F("hard strike!"));
-    } else {
-      //      soft strike
-      strcpy_P(BUFFER, (char*)pgm_read_word(&(strikes_short[nowNumber])));
-      tmrpcm.play(BUFFER);
-      Serial.println(F("soft strike!"));
-    }
-    //    Serial.println(BUFFER);
-  }
-  //  wait for sound to finish playing
-  //  delay(5000);
-}
-
 void get_light_effect(){
     //  LED effects
   byte brightness;
+  if (swing_flag == 1){
   // the interval at which you want to blink the LED.
   unsigned long currentMillis = millis();
   brightness = map(freq, 18, 300, 1, 255);
@@ -264,4 +236,9 @@ void get_light_effect(){
     analogWrite(ledB_Pin, ledState);
 
   }
+  } else {
+    analogWrite(ledR_Pin, 0);
+    analogWrite(ledG_Pin, 0);
+    analogWrite(ledB_Pin, 0);
+    }
 }
