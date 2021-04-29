@@ -20,9 +20,9 @@ TMRpcm tmrpcm;
 
 MPU6050 accelgyro;
 
-const int ledR_Pin =  5;// the number of the LED pin
-const int ledG_Pin =  6;// the number of the LED pin
-const int ledB_Pin =  3;// the number of the LED pin
+const int ledR_Pin = 6;// the number of the LED pin
+const int ledG_Pin = 9;// the number of the LED pin
+const int ledB_Pin = 8;// the number of the LED pin
 
 // ------------------------------ VARIABLES ---------------------------------
 int16_t ax, ay, az;
@@ -167,6 +167,8 @@ void getEffect1() {
     tmrpcm.loop(1);
   }
 }
+
+// detect sabre movement
 void getFreq() {
   if (ls_state) {                                               // if GyverSaber is on
     if (millis() - mpuTimer > 500) {
@@ -207,7 +209,6 @@ void getFreq() {
 
 //effect
 void getEffect() {
-  //  if ((ACC < STRIKE_THR) && GYR > 80 && (millis() - swing_timeout > 100)) {
   if ((ACC < STRIKE_THR) && GYR > 80 && (millis() - swing_timeout > 100)) {
     swing_timeout = millis();
     if (GYR >= SWING_THR) {
@@ -238,4 +239,29 @@ void getEffect() {
   }
   //  wait for sound to finish playing
   //  delay(5000);
+}
+
+void get_light_effect(){
+    //  LED effects
+  byte brightness;
+  // the interval at which you want to blink the LED.
+  unsigned long currentMillis = millis();
+  brightness = map(freq, 18, 300, 1, 255);
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      ledState = brightness;
+    } else {
+      ledState = 0;
+    }
+
+    // set the LED with the ledState of the variable:
+    analogWrite(ledR_Pin, ledState);
+    analogWrite(ledG_Pin, ledState);
+    analogWrite(ledB_Pin, ledState);
+
+  }
 }
