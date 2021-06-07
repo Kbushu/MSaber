@@ -225,7 +225,7 @@ void get_light_effect(){
 
     // if the LED is off turn it on and vice-versa:
     if (ledState == LOW) {
-      Serial.print("Lights On")
+      Serial.print("Lights On");
       ledState = brightness;
     } else {
       ledState = 0;
@@ -238,7 +238,7 @@ void get_light_effect(){
 
   }
   } else {
-    Serial.print("Lights Off")
+    Serial.print("Lights Off");
     analogWrite(ledR_Pin, 0);
     analogWrite(ledG_Pin, 0);
     analogWrite(ledB_Pin, 0);
